@@ -1,0 +1,305 @@
+package com.github.plot;
+
+import java.util.List;
+
+import com.github.plot.Plot.Data;
+import com.github.plot.Plot.Line;
+
+import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class Main {
+
+	public static void main(String[] args) throws IOException {
+		
+		HashMap<Integer,List<Double>> map1 = new HashMap<Integer,List<Double>>();
+		HashMap<Integer,List<Double>> map2 = new HashMap<Integer,List<Double>>();
+		HashMap<Integer,List<Double>> map3 = new HashMap<Integer,List<Double>>();
+		
+		BufferedReader br = new BufferedReader(new FileReader("../RSLB2/boot/results/bc92647b-cb43-4c38-a74f-1487aea0ebaa-TeamFormation.dat"));
+		try {
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        line = br.readLine();
+		        if(line != null) {
+			        if(line.charAt(0) == '#' || line.charAt(0) == 't') {
+			        	continue;
+			        }
+			        String[] vals = line.split("\t");
+			        ArrayList<Double> list = new ArrayList<Double>();
+			        for(int i = 1; i < 4; i++)
+			        	list.add(Double.valueOf(vals[i]));
+			        map1.put(Integer.valueOf(vals[0]), list);
+		        }
+		    }
+		} finally {
+		    br.close();
+		}
+		br = new BufferedReader(new FileReader("../RSLB2/boot/results/3efd4de1-b700-49b1-9b14-f6d75cbdc7eb-TeamFormation.dat"));
+		try {
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        line = br.readLine();
+		        if(line != null) {
+			        if(line.charAt(0) == '#' || line.charAt(0) == 't') {
+			        	continue;
+			        }
+			        String[] vals = line.split("\t");
+			        ArrayList<Double> list = new ArrayList<Double>();
+			        for(int i = 1; i < 4; i++)
+			        	list.add(Double.valueOf(vals[i]));
+			        map2.put(Integer.valueOf(vals[0]), list);
+		        }
+		    }
+		} finally {
+		    br.close();
+		}
+		br = new BufferedReader(new FileReader("../RSLB2/boot/results/cffd21f1-b1c0-4085-9a00-691187ef9f2f-TeamFormation.dat"));
+		try {
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        line = br.readLine();
+		        if(line != null) {
+			        if(line.charAt(0) == '#' || line.charAt(0) == 't') {
+			        	continue;
+			        }
+			        String[] vals = line.split("\t");
+			        ArrayList<Double> list = new ArrayList<Double>();
+			        for(int i = 1; i < 4; i++)
+			        	list.add(Double.valueOf(vals[i]));
+			        map3.put(Integer.valueOf(vals[0]), list);
+		        }
+		    }
+		} finally {
+		    br.close();
+		}
+		
+		Plot plot1 = Plot.plot(Plot.plotOpts().
+				title("Total number of Building that caught fire").
+				width(1000).
+				height(600).
+				legend(Plot.LegendFormat.BOTTOM)).
+				xAxis("step", Plot.axisOpts()).
+				yAxis("#", Plot.axisOpts());
+		Data data1 = Plot.data();
+		Data data2 = Plot.data();
+		Data data3 = Plot.data();
+		for(Integer d : map3.keySet())
+		{
+			data3 = data3.xy(d, map3.get(d).get(0));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map2.containsKey(d))
+				data2 = data2.xy(d, map2.get(d).get(0));
+			else
+				data2 = data2.xy(d, map2.get(map2.size()+22).get(0));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map1.containsKey(d))
+				data1 = data1.xy(d, map1.get(d).get(0));
+			else
+				data1 = data1.xy(d, map1.get(map1.size()+22).get(0));
+		}
+		
+		plot1 = plot1.
+				series("Infinite Range", data1, 
+				Plot.seriesOpts().
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 30000", data2, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 15000", data3, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLACK));
+		plot1.save("toist", "png");
+		
+		Plot plot2 = Plot.plot(Plot.plotOpts().
+				title("Current number of Building on fire").
+				width(1000).
+				height(600).
+				legend(Plot.LegendFormat.BOTTOM)).
+				xAxis("step", Plot.axisOpts()).
+				yAxis("#", Plot.axisOpts());
+		data1 = Plot.data();
+		data2 = Plot.data();
+		data3 = Plot.data();
+		for(Integer d : map3.keySet())
+		{
+			data3 = data3.xy(d, map3.get(d).get(1));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map2.containsKey(d))
+				data2 = data2.xy(d, map2.get(d).get(1));
+			else
+				data2 = data2.xy(d, map2.get(map2.size()+22).get(1));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map1.containsKey(d))
+				data1 = data1.xy(d, map1.get(d).get(1));
+			else
+				data1 = data1.xy(d, map1.get(map1.size()+22).get(1));
+		}
+		
+		plot2 = plot2.
+				series("Infinite Range", data1, 
+				Plot.seriesOpts().
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 30000", data2, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 15000", data3, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLACK));
+		plot2.save("toist2", "png");
+		
+		
+		Plot plot3 = Plot.plot(Plot.plotOpts().
+				title("Evolution of the score over time").
+				width(1000).
+				height(600).
+				legend(Plot.LegendFormat.BOTTOM)).
+				xAxis("step", Plot.axisOpts()).
+				yAxis("#", Plot.axisOpts());
+		data1 = Plot.data();
+		data2 = Plot.data();
+		data3 = Plot.data();
+		for(Integer d : map3.keySet())
+		{
+			data3 = data3.xy(d, map3.get(d).get(2));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map2.containsKey(d))
+				data2 = data2.xy(d, map2.get(d).get(2));
+			else
+				data2 = data2.xy(d, map2.get(map2.size()+22).get(2));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map1.containsKey(d))
+				data1 = data1.xy(d, map1.get(d).get(2));
+			else
+				data1 = data1.xy(d, map1.get(map1.size()+22).get(2));
+		}
+		
+		plot3 = plot3.
+				series("Infinite Range", data1, 
+				Plot.seriesOpts().
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 30000", data2, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLACK)).
+				series("Range = 15000", data3, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE));
+		plot3.save("toist3", "png");
+		
+		Plot plot4 = Plot.plot(Plot.plotOpts().
+				title("Number of steps to complete the simulation").
+				width(1000).
+				height(600).
+				legend(Plot.LegendFormat.BOTTOM)).
+				xAxis("", Plot.axisOpts().
+						range(-1, 3)).
+				yAxis("Number of steps", Plot.axisOpts().
+						range(0, 150));
+
+		data1 = Plot.data();
+		data2 = Plot.data();
+		data3 = Plot.data();
+		data3 = data3.xy(0, map3.size());
+		data2 = data2.xy(1, map2.size());
+		data1 = data1.xy(2, map1.size());
+		for(Integer d : map3.keySet())
+		{
+			data3 = data3.xy(d, map3.get(d).get(3));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map2.containsKey(d))
+				data2 = data2.xy(d, map2.get(d).get(3));
+			else
+				data2 = data2.xy(d, map2.get(map2.size()+22).get(3));
+		}
+		for(Integer d : map3.keySet())
+		{
+			System.out.println(d.intValue());
+			if(map1.containsKey(d))
+				data1 = data1.xy(d, map1.get(d).get(3));
+			else
+				data1 = data1.xy(d, map1.get(map1.size()+22).get(3));
+		}
+		
+		plot4 = plot4.
+				series("Infinite Range", data1, 
+				Plot.seriesOpts().
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 30000", data2, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLUE)).
+				series("Range = 15000", data3, 
+				Plot.seriesOpts().
+				line(Line.DASHED).
+				lineDash(new float[] { 3.0f, 5.0f }).
+				lineWidth(3).
+				marker(Plot.Marker.NONE).
+				color(Color.BLACK));
+		plot4.save("toist4", "png");
+	}
+	
+	
+}

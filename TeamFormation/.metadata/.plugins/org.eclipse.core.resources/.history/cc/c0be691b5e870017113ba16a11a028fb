@@ -1,0 +1,256 @@
+package RSLBench;
+
+import RSLBench.Assignment.Assignment;
+import RSLBench.Comm.CommunicationLayer;
+
+import static rescuecore2.misc.Handy.objectsToIDs;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+
+import rescuecore2.messages.Command;
+import rescuecore2.standard.entities.AmbulanceCentre;
+import rescuecore2.standard.entities.AmbulanceTeam;
+import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Civilian;
+import rescuecore2.standard.entities.FireBrigade;
+import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.Refuge;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.worldmodel.ChangeSet;
+import rescuecore2.worldmodel.EntityID;
+import RSLBench.Helpers.DistanceSorter;
+import RSLBench.Helpers.Logging.Markers;
+import RSLBench.Search.SearchResults;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
+/**
+ * A sample fire brigade agent.
+ */
+public class PlatoonAmbulanceAgent extends PlatoonAbstractAgent<AmbulanceTeam>
+{
+    private static final Logger Logger = LogManager.getLogger(PlatoonAmbulanceAgent.class);
+
+    public static final String MAX_DISTANCE_KEY = "clear.repair.distance";
+
+    private int range;
+    private EntityID assignedTarget = Assignment.UNKNOWN_TARGET_ID;
+    
+    public boolean withCivilian;
+
+    public PlatoonAmbulanceAgent() {
+    	Logger.debug(Markers.BLUE, "Platoon Ambulance Agent CREATED");
+    }
+
+    @Override
+    public String toString() {
+        return "Sample ambulance team";
+    }
+
+    @Override
+    protected void postConnect() {
+        super.postConnect();
+        model.indexClass(StandardEntityURN.AMBULANCE_CENTRE, StandardEntityURN.CIVILIAN);
+        range = config.getIntValue(MAX_DISTANCE_KEY);
+        withCivilian = false;
+        Logger.info("{} connected: clearing distance = {}", this, range);
+
+    }
+    
+    @Override
+    protected void think(int time, ChangeSet changed, Collection<Command> heard) {
+
+        if (time == config.getIntValue(kernel.KernelConstants.IGNORE_AGENT_COMMANDS_KEY)) {
+            // Subscribe to station channel
+            sendSubscribe(time, Constants.STATION_CHANNEL);
+        }
+
+        if (time < config.getIntValue(Constants.KEY_START_EXPERIMENT_TIME)) {
+            return;
+        }
+
+        if (time == config.getIntValue(Constants.KEY_END_EXPERIMENT_TIME))
+            System.exit(0);
+
+        // Wait until the station sends us an assignment
+        ////////////////////////////////////////////////////////////////////////
+        Logger.debug("Agent {} waiting for command.", getID());
+        assignedTarget = fetchAssignment();
+        if (assignedTarget != null) {
+            Logger.debug("Agent {} got target {}", getID(), assignedTarget);
+        } else {
+            Logger.warn("Agent {} unable to fetch its assignment.", getID());
+            assignedTarget = Assignment.UNKNOWN_TARGET_ID;
+        }
+        
+        if (!assignedTarget.equals(Assignment.UNKNOWN_TARGET_ID) && !(((Civilian)model.getEntity(assignedTarget)).getPosition(model) instanceof Refuge) && !(me.getPosition(model) instanceof AmbulanceTeam)) {
+        	planPathToCivilian(assignedTarget);
+        }
+
+        if(!idBlocks.isEmpty()) {
+	        String msg = "BARRICADES:";
+	        for(EntityID id : idBlocks) {
+	        	msg += "" + id + ",";
+	        }
+        	broadcastMsg(msg);
+        }
+
+        if(assignedTarget != Assignment.UNKNOWN_TARGET_ID && CivilianAgent.wounded.containsKey(assignedTarget)) {
+	        if(CivilianAgent.wounded.get(assignedTarget)) {
+		        String msg = "CIVILIAN:" + ((Human) model.getEntity(assignedTarget)).getPosition();
+	        	broadcastMsg(msg);
+	        }
+        }
+        // Start to act
+        // /////////////////////////////////////////////////////////////////////
+
+        // Are we with a civilian right now and dropping him at an ambulance center?
+        // //////////////////////////////////////
+        if (this.withCivilian
+                && location() instanceof Refuge) {
+            Logger.debug(Markers.MAGENTA, "Rescuing civilian at " + location());
+            sendUnload(time);
+            this.withCivilian = false;
+            return;
+        }
+
+        // Are we with a civilian?
+        // //////////////////////////////////////
+        if (this.withCivilian && !(location() instanceof Refuge)) {
+            // Head for an ambulancecenter
+            List<EntityID> path = search.search(me().getPosition(), refugeIDs,
+                    connectivityGraph, distanceMatrix).getPathIds();
+            if (path != null) {
+                // Logger.debugColor("Moving to refuge", //Logger.FG_MAGENTA);
+                sendMove(time, path);
+                return;
+            } else {
+                // Logger.debugColor("Couldn't plan a path to a refuge.",
+                // //Logger.BG_RED);
+                path = randomWalk();
+                // Logger.debugColor("Moving randomly", //Logger.FG_MAGENTA);
+                sendMove(time, path);
+                return;
+            }
+        }
+
+        // Find all buildings that are on fire
+        Collection<EntityID> civilians = getCivilians();
+
+        // Try to plan to assigned target
+        // ///////////////////////////////
+
+        // Ensure that the assigned target is still burning, and unassign the
+        // agent if it is not.
+        
+        
+        
+        if (!civilians.contains(assignedTarget)) {
+            assignedTarget = Assignment.UNKNOWN_TARGET_ID;
+        }
+
+        if (!assignedTarget.equals(Assignment.UNKNOWN_TARGET_ID) && !CivilianAgent.rescued.get(assignedTarget)) {
+
+            // Rescue if the assigned target is in range
+            if (model.getDistance(me().getPosition(), assignedTarget) <= range) {
+                Logger.info(Markers.MAGENTA, "Agent {} rescuing ASSIGNED target {}", getID(), assignedTarget);
+                sendLoad(time, assignedTarget);
+                withCivilian = true;
+                return;
+            }
+
+            // Try to approach the target (if we are here, it is not yet in range)
+            List<EntityID> path = planPathToCivilian(assignedTarget);
+            
+            if (path != null) {
+                Logger.debug(Markers.MAGENTA, "Agent {} approaching ASSIGNED target {}", getID(), assignedTarget);
+                sendMove(time, path);
+            } else {
+                Logger.warn(Markers.RED, "Agent {} can't find a path to ASSIGNED target {}. Moving randomly.", getID(), assignedTarget);
+                sendMove(time, randomWalk());
+            }
+            return;
+        }
+
+        // If agents can independently choose targets, do it
+        if (!config.getBooleanValue(Constants.KEY_AGENT_ONLY_ASSIGNED)) {
+            for (EntityID next : civilians) {
+                List<EntityID> path = planPathToCivilian(next);
+                if (path != null) {
+                    Logger.info(Markers.MAGENTA, "Unassigned agent {} choses target {} by itself", getID(), next);
+                    sendMove(time, path);
+                    return;
+                }
+            }
+            if (!civilians.isEmpty()) {
+                Logger.info(Markers.MAGENTA, "Unassigned agent {} can't reach any of the {} civilians", getID(), civilians.size());
+            }
+        }
+
+        // If the agen't can do nothing else, try to explore or just randomly
+        // walk around.
+        List<EntityID> path = randomExplore();
+        if (path != null) {
+            Logger.debug(Markers.MAGENTA, "Agent {} exploring", getID());
+        } else {
+            path = randomWalk();
+            Logger.debug(Markers.MAGENTA, "Agent {} moving randomly", getID());
+        }
+
+        sendMove(time, path);
+    }
+
+    @Override
+    protected EnumSet<StandardEntityURN> getRequestedEntityURNsEnum() {
+        return EnumSet.of(StandardEntityURN.AMBULANCE_TEAM);
+    }
+
+    /**
+     * Returns the burning buildings.
+     * @return a collection of burning buildings.
+     */
+    private Collection<EntityID> getCivilians() {
+        Collection<StandardEntity> e = model
+                .getEntitiesOfType(StandardEntityURN.CIVILIAN);
+        List<Civilian> result = new ArrayList<>();
+        for (StandardEntity next : e) {
+            if (next instanceof Civilian) {
+                Civilian b = (Civilian) next;
+                result.add(b);
+            }
+        }
+        // Sort by distance
+        Collections.sort(result, new DistanceSorter(location(), model));
+        return objectsToIDs(result);
+    }
+
+    /**
+     * Given a target, calls the chosen algorothm to plan the path to the target
+     * @param target: the target
+     * @return a list of EntityID representing the path to the target
+     */
+    private List<EntityID> planPathToCivilian(EntityID target) {
+        Collection<StandardEntity> targets = model.getObjectsInRange(((Civilian)model.getEntity(target)).getPosition(),
+                range / 2);
+        SearchResults res = search.search(me().getPosition(), ((Civilian)model.getEntity(target)).getPosition(),
+                connectivityGraph, distanceMatrix);
+        
+        idBlocks = new ArrayList<EntityID>();
+        for(Blockade block : res.getPathBlocks()) {
+        	idBlocks.add(block.getID());
+        }
+        
+        return res.getPathIds();
+    }
+    
+    
+
+}

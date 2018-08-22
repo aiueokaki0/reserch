@@ -1,0 +1,8 @@
+public class Probleme {
+
+	public static int solution(int nbCases) {
+		return 0;
+	}
+	
+	
+}

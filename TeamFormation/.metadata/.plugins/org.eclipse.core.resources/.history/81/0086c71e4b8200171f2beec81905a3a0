@@ -1,0 +1,17 @@
+public class Probleme {
+
+	public static int solution(int nbCases) {
+		switch(nbCases) {
+		case 0 : return 1;
+		case 1 : return solution(0);
+		case 2 : return solution(1) + solution(0);
+		case 3 : return 
+		
+		}
+		return nbCases;
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(solution(0));
+	}
+}

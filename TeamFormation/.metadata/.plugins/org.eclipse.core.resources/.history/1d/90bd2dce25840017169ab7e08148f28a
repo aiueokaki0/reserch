@@ -1,0 +1,12 @@
+package RSLBench;
+
+import RSLBench.Comm.Message;
+
+public class MessageString implements Message {
+
+	@Override
+	public int getBytes() {
+        return Message.BYTES_ENTITY_ID + (int)message.getSize() * Message.BYTES_UTILITY_VALUE;
+    }
+
+}

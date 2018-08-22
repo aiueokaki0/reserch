@@ -1,0 +1,76 @@
+package com.github.plot;
+
+import java.util.List;
+
+import com.github.plot.Plot.Data;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class Main {
+
+	public static void main(String[] args) throws IOException {
+		
+		HashMap<Integer,List<Double>> map1 = new HashMap<Integer,List<Double>>();
+		HashMap<Integer,List<Double>> map2 = new HashMap<Integer,List<Double>>();
+		
+		BufferedReader br = new BufferedReader(new FileReader("../RSLB2/boot/results/bc92647b-cb43-4c38-a74f-1487aea0ebaa-TeamFormation.dat"));
+		try {
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        line = br.readLine();
+		        if(line != null) {
+			        if(line.charAt(0) == '#' || line.charAt(0) == 't') {
+			        	continue;
+			        }
+			        String[] vals = line.split("\t");
+			        ArrayList<Double> list = new ArrayList<Double>();
+			        for(int i = 1; i < 4; i++)
+			        	list.add(Double.valueOf(vals[i]));
+			        map1.put(Integer.valueOf(vals[0]), list);
+		        }
+		    }
+		} finally {
+		    br.close();
+		}
+		br = new BufferedReader(new FileReader("../RSLB2/boot/results/3efd4de1-b700-49b1-9b14-f6d75cbdc7eb-TeamFormation.dat"));
+		try {
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        line = br.readLine();
+		        if(line != null) {
+			        if(line.charAt(0) == '#' || line.charAt(0) == 't') {
+			        	continue;
+			        }
+			        String[] vals = line.split("\t");
+			        ArrayList<Double> list = new ArrayList<Double>();
+			        for(int i = 1; i < 4; i++)
+			        	list.add(Double.valueOf(vals[i]));
+			        map2.put(Integer.valueOf(vals[0]), list);
+		        }
+		    }
+		} finally {
+		    br.close();
+		}
+		
+		Plot plot = Plot.plot(null);
+		Data data1 = Plot.data();
+		Data data2 = Plot.data();
+		for(Integer d : map1.keySet())
+		{
+			data1 = data1.xy(d, map1.get(d).get(0));
+		}
+		for(Integer d : map2.keySet())
+		{
+			data2 = data2.xy(d, map2.get(d).get(0));
+		}
+		
+		plot = plot.series(null, data, null);
+		plot.save("toast", "png");
+	}
+}

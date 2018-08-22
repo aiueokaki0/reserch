@@ -1,0 +1,17 @@
+package RSLBench;
+
+import RSLBench.Comm.Message;
+import rescuecore2.worldmodel.EntityID;
+
+public class MessageString implements Message {
+
+    private EntityID sender;
+    private EntityID receiver;
+    private String msg;
+	
+	@Override
+	public int getBytes() {
+        return Message.BYTES_ENTITY_ID + (int)msg.getSize() * Message.BYTES_UTILITY_VALUE;
+    }
+
+}

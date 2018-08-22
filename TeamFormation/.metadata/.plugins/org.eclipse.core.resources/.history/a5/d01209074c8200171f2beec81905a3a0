@@ -1,0 +1,26 @@
+public class Probleme {
+	
+	int res[] = new int[65536];
+	
+	public static int solution(int caseFinale) {
+		
+		if(caseFinale < 0)
+			return 0;
+		if(caseFinale == 0)
+			return 1;
+		if(caseFinale < 6)
+			return 
+		
+		switch(caseFinale) {
+		case 0 : return 1;
+		case 1 : return solution(0);
+		case 2 : return solution(1) + solution(0);
+		case 3 : return solu
+		
+		}
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(solution(0));
+	}
+}

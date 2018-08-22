@@ -1,0 +1,15 @@
+public class Probleme {
+
+	public static int solution(int nbCases) {
+		if(nbCases == 0)
+			return 0;
+		if(nbCases == 1)
+			return 1;
+		
+		return nbCases;
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(solution(0));
+	}
+}

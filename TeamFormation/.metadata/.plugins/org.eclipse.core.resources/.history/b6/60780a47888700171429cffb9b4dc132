@@ -1,0 +1,37 @@
+package com.github.plot;
+
+import java.util.List;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class Main {
+
+	public static void main(String[] args) throws IOException {
+		
+		HashMap<Integer,List<Double>> map1 = new HashMap<Integer,List<Double>>();
+		HashMap<Integer,List<Double>> map2 = new HashMap<Integer,List<Double>>();
+		
+		BufferedReader br = new BufferedReader(new FileReader("../RSLB2/boot/results/bc92647b-cb43-4c38-a74f-1487aea0ebaa-TeamFormation.dat"));
+		try {
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        line = br.readLine();
+		        if(line != null) {
+			        if(line.charAt(0) == '#' || line.charAt(0) == 't') {
+			        	continue;
+			        }
+			        String[] vals = line.split("\t");
+			        System.out.println(vals.length);
+			        ArrayList<Double> list = new ArrayList<Double>();
+			        list.add(vars[0]);
+		        }
+		    }
+		} finally {
+		    br.close();
+		}
+	}
+}

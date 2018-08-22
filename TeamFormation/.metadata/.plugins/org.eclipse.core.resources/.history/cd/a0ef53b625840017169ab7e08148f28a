@@ -1,0 +1,13 @@
+package RSLBench;
+
+import RSLBench.Comm.Message;
+
+public class MessageString implements Message {
+
+	@Override
+	public int getBytes() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+}

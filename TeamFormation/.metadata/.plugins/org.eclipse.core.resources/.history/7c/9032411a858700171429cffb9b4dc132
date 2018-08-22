@@ -1,0 +1,8 @@
+
+public class DrawGraph {
+	
+	public static void main(String[] args) {
+		
+		Plot p;
+	}
+}

@@ -1,0 +1,37 @@
+package RSLBench;
+
+import RSLBench.Comm.Message;
+import rescuecore2.worldmodel.EntityID;
+
+public class MessageID implements Message {
+
+    private EntityID sender;
+    private EntityID msg;
+	 
+	public MessageID(EntityID sender, EntityID msg) {
+		super();
+		this.sender = sender;
+		this.msg = msg;
+	}
+
+	public EntityID getSender() {
+		return sender;
+	}
+
+	public void setSender(EntityID sender) {
+		this.sender = sender;
+	}
+	public EntityID getMsg() {
+		return msg;
+	}
+
+	public void setMsg(EntityID msg) {
+		this.msg = msg;
+	}
+
+	@Override
+	public int getBytes() {
+        return Message.BYTES_ENTITY_ID;
+    }
+
+}
